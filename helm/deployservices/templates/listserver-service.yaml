@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: listserver
+  namespace: {{ .Values.namespace.services }}
+  labels:
+    app: {{ .Chart.Name }}-listserver
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  selector:
+    app: {{ .Chart.Name }}-listserver
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080

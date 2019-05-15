@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listserver
+  namespace: {{ .Values.namespace.services }}
+  labels:
+    app: {{ .Chart.Name }}-listserver
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-listserver
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-listserver
+    spec:
+      containers:
+      - name: listserver
+        image: bladedancer/listserver:1.0.0
+        env:
+          - name: PORT
+            value: "{{ .Values.port }}"
+        ports:
+        - containerPort: {{ .Values.port }}
+        livenessProbe:
+          httpGet:
+            path: /static/keys.txt
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 30
