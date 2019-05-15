@@ -1,0 +1,32 @@
+apiVersion: config.istio.io/v1alpha2
+kind: handler
+metadata:
+  name: whitelistapikey
+spec:
+  compiledAdapter: listchecker
+  params:
+    # providerUrl: ordinarily black and white lists are maintained
+    # externally and fetched asynchronously using the providerUrl.
+    overrides: ["secert"]  # overrides provide a static list
+    blacklist: false
+    entryType: CASE_INSENSITIVE_STRINGS
+---
+apiVersion: config.istio.io/v1alpha2
+kind: instance
+metadata:
+  name: apikey
+spec:
+  compiledTemplate: listentry
+  params:
+    value: request.headers["x-test"] | ""
+---
+apiVersion: config.istio.io/v1alpha2
+kind: rule
+metadata:
+  name: checkip
+spec:
+  match: source.labels["istio"] == "ingressgateway"
+  actions:
+  - handler: whitelistapikey
+    instances: [ apikey ]
+---

@@ -1,0 +1,27 @@
+apiVersion: "config.istio.io/v1alpha2"
+kind: handler
+metadata:
+  name: denyalllisthandler
+spec:
+  compiledAdapter: denier
+  params:
+    status:
+      code: 7
+      message: Not allowed because.
+---
+apiVersion: "config.istio.io/v1alpha2"
+kind: instance
+metadata:
+  name: denyalllistrequest
+spec:
+  compiledTemplate: checknothing
+---
+apiVersion: "config.istio.io/v1alpha2"
+kind: rule
+metadata:
+  name: denyalllist
+spec:
+  match: request.headers["x-test"] != "secret"
+  actions:
+  - handler: denyalllisthandler
+    instances: [ denyalllistrequest ]
