@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: listserver
+  name: onetime
   namespace: {{ .Values.namespace.services }}
   labels:
-    app: {{ .Chart.Name }}-listserver
+    app: {{ .Chart.Name }}-onetime
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
@@ -12,23 +12,23 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}-listserver
+      app: {{ .Chart.Name }}-onetime
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}-listserver
+        app: {{ .Chart.Name }}-onetime
     spec:
       containers:
-      - name: listserver
-        image: bladedancer/listserver:1.0.0
+      - name: onetime
+        image: bladedancer/onetime:1.0.4
         env:
           - name: PORT
             value: "8080"
         ports:
-        - containerPort: {{ .Values.listserver.port }}
+        - containerPort: {{ .Values.onetime.port }}
         livenessProbe:
           httpGet:
-            path: /static/keys.txt
+            path: /apibuilderPing.json
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 30

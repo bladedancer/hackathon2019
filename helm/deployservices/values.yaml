@@ -1,3 +1,9 @@
-port: 8080
+listserver:
+  port: 8080
+onetime:
+  port: 8080
+gateway:
+  name: gw-e4edbf976ab5193b016ab58ec38f000d-gavin-ref-a
+  host: gavin-ref-a.apic-k8s.axwaytest.net
 namespace:
   services: hack
