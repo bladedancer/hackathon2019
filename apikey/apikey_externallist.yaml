@@ -5,11 +5,10 @@ metadata:
 spec:
   compiledAdapter: listchecker
   params:
+    refreshInterval: 30s
     cachingInterval: 0
     cachingUseCount: 1
-    # providerUrl: ordinarily black and white lists are maintained
-    # externally and fetched asynchronously using the providerUrl.
-    overrides: ["secret"]  # overrides provide a static list
+    providerUrl: http://listserver.hack.svc.cluster.local:8080/static/keys.txt
     blacklist: false
     entryType: CASE_INSENSITIVE_STRINGS
 ---
