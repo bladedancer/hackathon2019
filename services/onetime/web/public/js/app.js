@@ -8,7 +8,7 @@ async function register() {
     
     const req = {
         method: 'GET',
-        url: "/api/v1/totp/register",
+        url: window.location + "/api/v1/totp/register",
         params: {
             name: name.value
         }
