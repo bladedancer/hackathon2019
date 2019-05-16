@@ -6,9 +6,14 @@
 package onetimeadapter
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"net/http"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -37,7 +42,66 @@ type (
 
 var _ authorization.HandleAuthorizationServiceServer = &OnetimeAdapter{}
 
-// HandleMetric records metric entries
+func (s *OnetimeAdapter) verifyToken(user string, token string, url string) bool {
+	reqBody, err := json.Marshal(map[string]string{
+		"token": token,
+	})
+
+	if err != nil {
+		log.Errorf("%v", err)
+		return false
+	}
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
+	if err != nil {
+		log.Errorf("%v", err)
+		return false
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("x-user", user)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Errorf("%v", err)
+		return false
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("%v", err)
+		return false
+	}
+
+	if resp.StatusCode != 200 {
+		log.Errorf("Status Code: %d [%s]", resp.StatusCode, resp.Status)
+		return false
+	}
+
+	log.Infof("body: %s", string(body))
+
+	// Messed up somewhere along the line and response is getting double encoded...ah well double decode
+	var firstPass string
+	err = json.Unmarshal(body, &firstPass)
+	if err != nil {
+		log.Errorf("%v", err)
+		return false
+	}
+
+	var authResp map[string]interface{}
+
+	err = json.Unmarshal([]byte(firstPass), &authResp)
+	if err != nil {
+		log.Errorf("%v", err)
+		return false
+	}
+
+	log.Infof("Resp: %v", authResp)
+	return authResp["valid"].(bool)
+}
+
+// HandleAuthorization handle authorization requests
 func (s *OnetimeAdapter) HandleAuthorization(ctx context.Context, r *authorization.HandleAuthorizationRequest) (*v1beta1.CheckResult, error) {
 
 	log.Infof("received request %v\n", *r)
@@ -50,6 +114,7 @@ func (s *OnetimeAdapter) HandleAuthorization(ctx context.Context, r *authorizati
 			return nil, err
 		}
 	}
+	log.Infof("PdpUrl: %s", cfg.PdpUrl)
 
 	decodeValue := func(in interface{}) interface{} {
 		switch t := in.(type) {
@@ -72,25 +137,45 @@ func (s *OnetimeAdapter) HandleAuthorization(ctx context.Context, r *authorizati
 		return out
 	}
 
-	log.Infof(cfg.PdpUrl)
-
 	props := decodeValueMap(r.Instance.Subject.Properties)
-	log.Infof("%v", props)
+	user := r.Instance.Subject.User
+	token := props["custom_token_header"]
+	log.Infof("User[%s] Token[%s]", user, token)
 
-	for k, v := range props {
-		fmt.Println("k:", k, "v:", v)
-		if (k == "custom_token_header") && v == cfg.PdpUrl {
-			log.Infof("success!!")
+	duration, _ := time.ParseDuration("1s")
+	usecount := int32(1)
+
+	if cfg.PdpUrl == "fake://deny" || token == "deny" {
+		log.Infof("Fake Rejection!")
+		return &v1beta1.CheckResult{
+			Status:        status.WithPermissionDenied("Unauthorized..."),
+			ValidDuration: duration,
+			ValidUseCount: usecount,
+		}, nil
+	} else if cfg.PdpUrl == "fake://allow" || token == "allow" {
+		return &v1beta1.CheckResult{
+			Status:        status.OK,
+			ValidDuration: duration,
+			ValidUseCount: usecount,
+		}, nil
+	} else {
+		authorized := s.verifyToken(user, token.(string), cfg.PdpUrl)
+		if authorized {
+			log.Infof("Authorization successful")
 			return &v1beta1.CheckResult{
-				Status: status.OK,
+				Status:        status.OK,
+				ValidDuration: duration,
+				ValidUseCount: usecount,
+			}, nil
+		} else {
+			log.Infof("Authorization failed")
+			return &v1beta1.CheckResult{
+				Status:        status.WithPermissionDenied("Access denied."),
+				ValidDuration: duration,
+				ValidUseCount: usecount,
 			}, nil
 		}
 	}
-
-	log.Infof("failure; header not provided")
-	return &v1beta1.CheckResult{
-		Status: status.WithPermissionDenied("Unauthorized..."),
-	}, nil
 }
 
 // Addr returns the listening address of the server
@@ -128,7 +213,7 @@ func NewOnetimeAdapter(addr string) (Server, error) {
 	s := &OnetimeAdapter{
 		listener: listener,
 	}
-	fmt.Printf("listening on \"%v\"\n", s.Addr())
+	log.Infof("listening on \"%v\"\n", s.Addr())
 	s.server = grpc.NewServer()
 	authorization.RegisterHandleAuthorizationServiceServer(s.server, s)
 	return s, nil

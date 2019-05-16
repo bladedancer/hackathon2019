@@ -10,7 +10,7 @@ spec:
  connection:
    address: "onetimeadapterservice.istio-system.svc.cluster.local:44225"
  params:
-   pdp_url: "abc"
+   pdp_url: "http://onetime.hack.svc.cluster.local:8080/api/v1/totp/verify"
 ---
 apiVersion: "config.istio.io/v1alpha2"
 kind: instance
