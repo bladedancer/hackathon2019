@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+// config for onetimeadapter
+package adapter.onetimeadapter.config;
+
+import "gogoproto/gogo.proto";
+
+option go_package="config";
+
+// config for onetimeadapter
+message Params {
+    // pdp url
+    string pdp_url = 1;
+}

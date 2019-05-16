@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: onetimeadapterservice
+  namespace: istio-system
+  labels:
+    app: onetimeadapter
+spec:
+  type: ClusterIP
+  ports:
+  - name: grpc
+    protocol: TCP
+    port: 44225
+    targetPort: 44225
+  selector:
+    app: onetimeadapter
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: onetimeadapter
+  namespace: istio-system
+  labels:
+    app: onetimeadapter
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: onetimeadapter
+      annotations:
+        sidecar.istio.io/inject: "false"
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+    spec:
+      containers:
+      - name: onetimeadapter
+        image: bladedancer/onetimeadapter:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 44225

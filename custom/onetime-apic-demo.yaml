@@ -1,0 +1,39 @@
+# Install a rule on inbound requests to services in the apic-demo namespace
+# enforcing onetime password authorization.
+apiVersion: "config.istio.io/v1alpha2"
+kind: handler
+metadata:
+ name: onetimehandler
+ namespace: istio-system
+spec:
+ adapter: onetimeadapter
+ connection:
+   address: "onetimeadapterservice.istio-system.svc.cluster.local:44225"
+ params:
+   pdp_url: "abc"
+---
+apiVersion: "config.istio.io/v1alpha2"
+kind: instance
+metadata:
+ name: onetimeinstance
+ namespace: istio-system
+spec:
+ template: authorization
+ params:
+   subject:
+     user: request.headers["user"]
+     properties:
+       custom_token_header: request.headers["apikey"]
+---
+apiVersion: "config.istio.io/v1alpha2"
+kind: rule
+metadata:
+ name: onetimerule
+ namespace: istio-system
+spec:
+ match: source.labels["istio"] == "ingressgateway" && destination.namespace == "apic-demo"
+ actions:
+ - handler: onetimehandler.istio-system
+   instances:
+   - onetimeinstance
+---
