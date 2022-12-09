@@ -22,7 +22,7 @@
 		"@axway/api-builder-plugin-fn-json": "^1.0.0",
 		"@axway/api-builder-plugin-fn-restclient": "^2.0.0",
 		"@axway/api-builder-plugin-fn-swagger": "^2.0.0",
-		"@axway/api-builder-runtime": "^4.6.0",
+		"@axway/api-builder-runtime": "^4.94.1",
 		"api-builder-plugin-fn-speakeasy-node": "file:nodes/api-builder-plugin-fn-speakeasy-node",
 		"qrcode": "^1.3.3",
 		"speakeasy": "^2.0.0"
